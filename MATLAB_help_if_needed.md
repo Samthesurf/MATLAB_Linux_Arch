@@ -11,29 +11,50 @@ This is a practical install + fix guide for getting MATLAB **R2025a** running on
 
 ---
 
-## 1) Install MATLAB normally first
+## 1) Prepare GNU TLS 3.8.8 first (required)
 
-Install from the official MathWorks installer as usual.
-
-Example source layout used here:
-
-- Installer media: `/run/media/<user>/MATHWORKS_R2025A`
-- Final install path: `/home/<user>/Downloads/R2025a`
-
----
-
-## 2) Main compatibility fix (important): pin GNU TLS 3.8.8 inside MATLAB
-
-Recent Arch `gnutls` versions can crash MATLAB licensing startup on some systems.
-
-Run:
+Before mounting or running the MATLAB installer, unpack GNU TLS 3.8.8 into `/tmp`:
 
 ```bash
 mkdir -p /tmp/gnutls-3.8.8
 curl -L --fail -o /tmp/gnutls-3.8.8.pkg.tar.zst \
   https://archive.archlinux.org/packages/g/gnutls/gnutls-3.8.8-1-x86_64.pkg.tar.zst
 tar -xf /tmp/gnutls-3.8.8.pkg.tar.zst -C /tmp/gnutls-3.8.8 usr/lib
+```
 
+---
+
+## 2) Mount the MATLAB ISO
+
+Mount the ISO, then move into the mounted root so `./install` and `$PWD/bin/glnxa64` both resolve correctly.
+
+Example:
+
+```bash
+sudo mkdir -p /mnt/matlab-r2025a
+sudo mount -o loop /path/to/MATLAB_R2025a.iso /mnt/matlab-r2025a
+cd /mnt/matlab-r2025a
+```
+
+---
+
+## 3) Run installer with compatibility environment
+
+From the mounted ISO directory:
+
+```bash
+env LD_LIBRARY_PATH=/tmp/gnutls-3.8.8/usr/lib:$PWD/bin/glnxa64:$LD_LIBRARY_PATH \
+  LD_PRELOAD=/usr/lib/libfontconfig.so.1:/usr/lib/libfreetype.so.6 \
+  ./install
+```
+
+---
+
+## 4) Post-install compatibility fix: pin GNU TLS 3.8.8 inside MATLAB
+
+After install, also pin GNU TLS 3.8.8 in the MATLAB runtime tree:
+
+```bash
 MATROOT="/home/<user>/Downloads/R2025a"
 mkdir -p "$MATROOT/bin/glnxa64/gnutls"
 cp -af /tmp/gnutls-3.8.8/usr/lib/libgnutls.so.30* "$MATROOT/bin/glnxa64/gnutls/"
@@ -47,7 +68,7 @@ ln -sfn gnutls/libgnutls.so.30.40.2 libgnutls.so.30.40.2
 
 ---
 
-## 3) ServiceHost executable-stack fix (Arch/glibc issue)
+## 5) ServiceHost executable-stack fix (Arch/glibc issue)
 
 On Arch, MATLAB ServiceHost libs may require stack flag patching.
 
@@ -74,7 +95,7 @@ Expected: `RW` (not `RWE`).
 
 ---
 
-## 4) Launch command that worked
+## 6) Launch command that worked
 
 Use this launcher command:
 
@@ -85,21 +106,25 @@ env LD_PRELOAD=/usr/lib/libstdc++.so.6:/usr/lib/libfontconfig.so.1:/usr/lib/libf
 
 ---
 
-## 5) Desktop file (recommended)
+## 7) Add desktop file + SVG icon (using the files in this repo)
 
-Path:
+Copy the provided files:
 
-`~/.local/share/applications/matlab.desktop`
+```bash
+install -Dm644 matlab.desktop ~/.local/share/applications/matlab.desktop
+install -Dm644 matlab.svg /home/<user>/Downloads/matlab.svg
+```
 
-Minimal working `Exec` line:
+If your MATLAB path or icon path differs, edit `~/.local/share/applications/matlab.desktop` and adjust:
 
 ```ini
 Exec=env LD_PRELOAD=/usr/lib/libstdc++.so.6:/usr/lib/libfontconfig.so.1:/usr/lib/libfreetype.so.6 /home/<user>/Downloads/R2025a/bin/matlab -desktop
+Icon=/home/<user>/Downloads/matlab.svg
 ```
 
 ---
 
-## 6) Fast troubleshooting checklist
+## 8) Fast troubleshooting checklist
 
 If MATLAB still crashes:
 
@@ -117,14 +142,14 @@ timeout 10 env LD_DEBUG=libs \
    - `$MATROOT/bin/glnxa64/libgnutls.so.30.*`
    - `$MATROOT/bin/glnxa64/gnutls/`
 
-3. Re-run ServiceHost patch section (Step 3).
+3. Re-run ServiceHost patch section (Step 5).
 
 4. Check latest crash file:
    - `~/matlab_crash_dump.*`
 
 ---
 
-## 7) Notes from this machine
+## 9) Notes from this machine
 
 - Arch Linux, glibc `2.43`
 - MATLAB `R2025a` (`25.1.0.2943329`)
@@ -133,7 +158,7 @@ timeout 10 env LD_DEBUG=libs \
 
 ---
 
-## 8) One-command launch alias (optional)
+## 10) One-command launch alias (optional)
 
 Add to `~/.bashrc` or `~/.zshrc`:
 
@@ -143,7 +168,7 @@ alias matlab='env LD_PRELOAD=/usr/lib/libstdc++.so.6:/usr/lib/libfontconfig.so.1
 
 ---
 
-## 9) Simulink/SVN error: `libcrypt.so.1` missing
+## 11) Simulink/SVN error: `libcrypt.so.1` missing
 
 If you see errors like:
 

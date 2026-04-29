@@ -1,0 +1,20 @@
+[Desktop Entry]
+Categories=Development;Math;Science
+Comment=Scientific computing environment
+Comment[en_NG]=Scientific computing environment
+Exec=env LD_PRELOAD=/usr/lib/libstdc++.so.6:/usr/lib/libfontconfig.so.1:/usr/lib/libfreetype.so.6 /home/samuelsurf/Downloads/R2025a/bin/matlab -desktop
+GenericName=
+GenericName[en_NG]=
+Icon=/home/samuelsurf/Downloads/matlab.svg
+MimeType=text/x-matlab;
+Name=MATLAB
+Name[en_NG]=MATLAB
+NoDisplay=false
+Path=
+PrefersNonDefaultGPU=false
+StartupNotify=true
+Terminal=false
+TerminalOptions=
+Type=Application
+X-KDE-SubstituteUID=false
+X-KDE-Username=
